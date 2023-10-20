@@ -41,5 +41,6 @@ Route::group(['middleware' => 'api','prefix' => 'hotels'], function () {
     Route::put('/update/{id}',[HotelController::class,'update'])->name('hotel_update');
     Route::delete('/delete/{id}',[HotelController::class,'destroy'])->name('hotel_delete');
     Route::post('/add_rooms/{id}',[HotelController::class,'addRooms'])->name('hotel_add_rooms');
+    Route::get('/hotel/{id}/rooms',[HotelController::class,'showRooms'])->name('hotel_rooms');
 });
 

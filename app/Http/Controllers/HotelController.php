@@ -25,9 +25,16 @@ class HotelController extends Controller
     public function index()
     {
         try {
-            $hotels = Hotel::all();
+            $hotels = Hotel::with('bedrooms')->get();
             $types = Type::all();
             $accommodations = Accommodation::all();
+            foreach ($hotels as $hotel) {
+                $roomNumber = 0;
+                foreach ($hotel->bedrooms as $bedroom) {
+                    $roomNumber += $bedroom->quantity;
+                }
+                $hotel->quantity = $roomNumber;
+            }
             $data = ['hotels' => $hotels,'types' => $types,'accommodations' => $accommodations];
             return SuccessResponseJson::successResponse($data,200);
         } catch (\Throwable $th) {
@@ -50,7 +57,8 @@ class HotelController extends Controller
                 'number_rooms' => 'required|integer'
             ]);
             if ($validator->fails()) {
-                return ErrorResponseJson::errorResponse($validator->errors(),400);
+                $messageErrors = collect($validator->errors()->all())->implode("\n");
+                return ErrorResponseJson::errorResponse($messageErrors,400);
             }
 
             $hotel = Hotel::create($validator->validate());
@@ -112,17 +120,19 @@ class HotelController extends Controller
             $hotel = Hotel::findOrFail($id);
             if (!$hotel) return ErrorResponseJson::errorResponse(__('validation.hotel_not_exist'),404);
 
-            $validateQuantity = $this->validateQuantity($hotel);
-            if ($validateQuantity) return ErrorResponseJson::errorResponse(__('validation.limit_rooms'),400);
-
             $validator = Validator::make($request->all(), [
                 'quantity' => 'required|integer',
                 'type_id' => 'required|integer',
                 'accommodation_id' => 'required|integer',
             ]);
-            if ($validator->fails()) {
-                if ($validateQuantity) return ErrorResponseJson::errorResponse($validator->errors(),400);
+
+            if ($validator->fails()){
+                $messageErrors = collect($validator->errors()->all())->implode("\n");
+                return ErrorResponseJson::errorResponse($messageErrors,400);
             }
+
+            $validateQuantity = $this->validateQuantity($hotel);
+            if ($validateQuantity) return ErrorResponseJson::errorResponse(__('validation.limit_rooms'),400);
 
             $existType = $this->existType($request->type_id);
 
@@ -145,6 +155,22 @@ class HotelController extends Controller
 
             return SuccessResponseJson::successResponse($room,201);
 
+        } catch (\Throwable $th) {
+            return ErrorResponseJson::errorResponse( $th->getMessage(),500);
+        }
+    }
+
+    public function showRooms($id) {
+        try {
+            $rooms = Bedroom::with('type', 'accommodation')
+            ->where('hotel_id', $id)
+            ->get();
+            foreach ($rooms as $room) {
+                $room->typeName = $room->type->name;
+                $room->accommodationName = $room->accommodation->name;
+
+            }
+            return SuccessResponseJson::successResponse($rooms,200);
         } catch (\Throwable $th) {
             return ErrorResponseJson::errorResponse( $th->getMessage(),500);
         }
