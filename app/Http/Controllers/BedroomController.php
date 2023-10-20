@@ -13,10 +13,14 @@ use Illuminate\Support\Facades\Validator;
 
 class BedroomController extends Controller
 {
+    /**
+     * Agregar habitaciones al hotel
+     */
     function addRooms(Request $request, string $id)
     {
         try {
 
+            // Validamos si el hotel existe
             $hotel = Hotel::findOrFail($id);
             if (!$hotel) return ErrorResponseJson::errorResponse(__('validation.hotel_not_exist'),404);
 
@@ -26,31 +30,37 @@ class BedroomController extends Controller
                 'accommodation_id' => 'required|integer',
             ]);
 
+            //  Validamos si los datos recibidos cumplen la validación
             if ($validator->fails()){
                 $messageErrors = collect($validator->errors()->all())->implode("\n");
                 return ErrorResponseJson::errorResponse($messageErrors,400);
             }
 
-            $validateAssignmentRooms = $this->validateAssignmentRooms($hotel,$request->type_id,$request->accommodation_id);
-            if (!$validateAssignmentRooms) return ErrorResponseJson::errorResponse(__('validation.assignment_rooms'),400);
-
-            $validateQuantity = $this->validateQuantity($hotel);
-            if ($validateQuantity) return ErrorResponseJson::errorResponse(__('validation.limit_rooms'),400);
-
+            // Validamos si existe el tipo de habitación
             $existType = $this->existType($request->type_id);
-
             if (!$existType) return ErrorResponseJson::errorResponse(__('validation.room_type_not_exist'),404);
 
+            // Validamos si existe el tipo de acomodación
             $existAccommodation = $this->existAccommodation($request->accommodation_id);
             if (!$existAccommodation) return ErrorResponseJson::errorResponse(__('validation.accommodation_not_exist'),404);
 
+            // Validamos el tipo y acomodación que se quiere agregar
+            $validateAssignmentRooms = $this->validateAssignmentRooms($hotel,$request->type_id,$request->accommodation_id);
+            if (!$validateAssignmentRooms) return ErrorResponseJson::errorResponse(__('validation.assignment_rooms'),400);
+
+            // Validamos la cantidad de habitaciones totales con las habitaciones recibidas
+            $validateQuantity = $this->validateQuantity($hotel);
+            if ($validateQuantity) return ErrorResponseJson::errorResponse(__('validation.limit_rooms'),400);
+
+            // Validamos que la suma de las habitaciones ya agregadas con la cantidad recibida no sea mayor a el numero de habitaciones totales del hotel
             $totalRooms = $this->totalRooms($hotel,$request->quantity);
             if ($totalRooms) return ErrorResponseJson::errorResponse(__('validation.quantity_over_capacity'),400);
 
-
+            // Validamos que los tipos y acomodaciones no estén repetidas para el mismo hotel
             $validateRooms = $this->validateRooms($hotel,$request->type_id,$request->accommodation_id);
             if ($validateRooms) return ErrorResponseJson::errorResponse(__('validation.rooms_t_a_exist'),400);
 
+            // Creamos la habitación
             $room = Bedroom::create(array_merge(
                 $validator->validate(),
                 ['hotel_id' => $id]
@@ -63,6 +73,7 @@ class BedroomController extends Controller
         }
     }
 
+    // obtener las habitaciones del hotel
     public function showRooms($id) {
         try {
             $rooms = Bedroom::with('type', 'accommodation')
