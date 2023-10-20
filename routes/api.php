@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BedroomController;
 use App\Http\Controllers\HotelController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -40,7 +41,9 @@ Route::group(['middleware' => 'api','prefix' => 'hotels'], function () {
     Route::get('/{id}',[HotelController::class,'show'])->name('hotel');
     Route::put('/update/{id}',[HotelController::class,'update'])->name('hotel_update');
     Route::delete('/delete/{id}',[HotelController::class,'destroy'])->name('hotel_delete');
-    Route::post('/add_rooms/{id}',[HotelController::class,'addRooms'])->name('hotel_add_rooms');
-    Route::get('/hotel/{id}/rooms',[HotelController::class,'showRooms'])->name('hotel_rooms');
+
+    // Rooms
+    Route::post('/add_rooms/{id}',[BedroomController::class,'addRooms'])->name('hotel_add_rooms');
+    Route::get('/hotel/{id}/rooms',[BedroomController::class,'showRooms'])->name('hotel_rooms');
 });
 

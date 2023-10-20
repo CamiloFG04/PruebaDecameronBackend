@@ -123,7 +123,7 @@ return [
     'accommodation_not_exist' =>'La acomodación de la habitación no existe',
     'quantity_over_capacity' =>'La cantidad de habitaciones agregadas mas las ya existentes superan la capacidad del hotel',
     'rooms_t_a_exist' =>'No es posible agregar tipos de habitaciones y acomodaciones repetidas para el mismo hotel',
-
+    'assignment_rooms' => 'No se puede agregar esta acomodación para este tipo de habitación',
     /*
     |--------------------------------------------------------------------------
     | Custom Validation Language Lines
